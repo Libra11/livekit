@@ -111,6 +111,10 @@ var baseFlags = []cli.Flag{
 	},
 }
 
+/*
+在计算机中，随机数生成器的输出是基于其内部状态的。
+种子决定了随机数生成器的初始状态，从而影响后续生成的随机数序列。
+*/
 func init() {
 	rand.Seed(time.Now().Unix())
 }
@@ -127,6 +131,8 @@ func main() {
 		fmt.Println(err)
 	}
 
+	// Flag: livekit --flag
+	// Command: livekit command
 	app := &cli.App{
 		Name:        "livekit-server",
 		Usage:       "High performance WebRTC server",
@@ -169,8 +175,9 @@ func main() {
 				},
 			},
 			{
-				Name:   "list-nodes",
-				Usage:  "list all nodes",
+				Name:  "list-nodes",
+				Usage: "list all nodes",
+				// TODO：
 				Action: listNodes,
 			},
 			{
@@ -227,6 +234,8 @@ func getConfig(c *cli.Context) (*config.Config, error) {
 				// our IP discovery ignores loopback addresses
 				for _, addr := range conf.BindAddresses {
 					ip := net.ParseIP(addr)
+					// loopback: 意思是回环地址，即本机地址
+					// unspecified: 意思是未指定的地址
 					if ip != nil && !ip.IsLoopback() && !ip.IsUnspecified() {
 						shouldMatchRTCIP = true
 					}
@@ -294,6 +303,8 @@ func startServer(c *cli.Context) error {
 	return server.Start()
 }
 
+// getConfigString 从文件或者环境变量中获取配置
+// inConfigBody: 环境变量中的配置 */
 func getConfigString(configFile string, inConfigBody string) (string, error) {
 	if inConfigBody != "" || configFile == "" {
 		return inConfigBody, nil

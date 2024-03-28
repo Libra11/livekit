@@ -34,14 +34,18 @@ import (
 	"github.com/livekit/livekit-server/pkg/service"
 )
 
+// generateKeys 生成 API 密钥
 func generateKeys(_ *cli.Context) error {
+	// APIKeyPrefix = "API"
 	apiKey := utils.NewGuid(utils.APIKeyPrefix)
+	// 生成随机密钥，长度为 32 字节， 也就是 256 位
 	secret := utils.RandomSecret()
 	fmt.Println("API Key: ", apiKey)
 	fmt.Println("API Secret: ", secret)
 	return nil
 }
 
+// printPorts 打印 TCP 和 UDP 端口
 func printPorts(c *cli.Context) error {
 	conf, err := getConfig(c)
 	if err != nil {
@@ -93,6 +97,7 @@ func helpVerbose(c *cli.Context) error {
 	return cli.ShowAppHelp(c)
 }
 
+// 废弃函数
 func createToken(c *cli.Context) error {
 	room := c.String("room")
 	identity := c.String("identity")

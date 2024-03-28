@@ -509,21 +509,25 @@ var DefaultConfig = Config{
 }
 
 func NewConfig(confString string, strictMode bool, c *cli.Context, baseFlags []cli.Flag) (*Config, error) {
-	// start with defaults
+	// 把默认配置转换为 yaml 格式
 	marshalled, err := yaml.Marshal(&DefaultConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	var conf Config
+	// 从 yaml 格式的配置中解析出配置, 赋值给 conf
 	err = yaml.Unmarshal(marshalled, &conf)
 	if err != nil {
 		return nil, err
 	}
 
 	if confString != "" {
+		// 从字符串中解析配置
 		decoder := yaml.NewDecoder(strings.NewReader(confString))
+		// KnownFields 用于设置解码器是否应该严格检查字段
 		decoder.KnownFields(strictMode)
+		// 解码配置 覆盖默认配置 conf
 		if err := decoder.Decode(&conf); err != nil {
 			return nil, fmt.Errorf("could not parse config: %v", err)
 		}
@@ -596,6 +600,9 @@ type configNode struct {
 	TagPrefix string
 }
 
+// ToCLIFlagNames 将配置字段映射到对应的 reflect.Value，并生成基于 YAML 标签的 CLI 标志名称。
+// existingFlags 已存在的 CLI 标志, 这些标志将被忽略，只有不存在的标志才会被生成
+// /*
 func (conf *Config) ToCLIFlagNames(existingFlags []cli.Flag) map[string]reflect.Value {
 	existingFlagNames := map[string]bool{}
 	for _, flag := range existingFlags {
@@ -609,12 +616,15 @@ func (conf *Config) ToCLIFlagNames(existingFlags []cli.Flag) map[string]reflect.
 	nodes := []configNode{{reflect.ValueOf(conf).Elem(), ""}}
 	for len(nodes) > 0 {
 		currNode, nodes = nodes[0], nodes[1:]
+		// currNode.TypeNode.NumField() 返回结构体中字段的数量
 		for i := 0; i < currNode.TypeNode.NumField(); i++ {
-			// inspect yaml tag from struct field to get path
+			// currNode.TypeNode.Type().Field(i) 返回结构体中的第 i 个字段
 			field := currNode.TypeNode.Type().Field(i)
+			// strings.SplitN(field.Tag.Get("yaml"), ",", 2) 通过逗号分隔 yaml 标签
 			yamlTagArray := strings.SplitN(field.Tag.Get("yaml"), ",", 2)
 			yamlTag := yamlTagArray[0]
 			isInline := false
+			// inline: 用于指示将结构体字段展开到父结构体中
 			if len(yamlTagArray) > 1 && yamlTagArray[1] == "inline" {
 				isInline = true
 			}
@@ -683,6 +693,8 @@ func (conf *Config) ValidateKeys() error {
 	return nil
 }
 
+// GenerateCLIFlags 生成 CLI 标志, 用于配置文件中的字段， 并且忽略已存在的标志
+// /*
 func GenerateCLIFlags(existingFlags []cli.Flag, hidden bool) ([]cli.Flag, error) {
 	blankConfig := &Config{}
 	flags := make([]cli.Flag, 0)
@@ -770,6 +782,7 @@ func GenerateCLIFlags(existingFlags []cli.Flag, hidden bool) ([]cli.Flag, error)
 	return flags, nil
 }
 
+// updateFromCLI 从 CLI 中更新配置 conf */
 func (conf *Config) updateFromCLI(c *cli.Context, baseFlags []cli.Flag) error {
 	generatedFlagNames := conf.ToCLIFlagNames(baseFlags)
 	for _, flag := range c.App.Flags {
