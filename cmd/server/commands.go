@@ -87,6 +87,7 @@ func printPorts(c *cli.Context) error {
 	return nil
 }
 
+// helpVerbose 帮助信息
 func helpVerbose(c *cli.Context) error {
 	generatedFlags, err := config.GenerateCLIFlags(baseFlags, false)
 	if err != nil {
@@ -164,6 +165,7 @@ func createToken(c *cli.Context) error {
 	return nil
 }
 
+// listNodes 列出所有节点, 并以表格的形式展示节点的信息 */
 func listNodes(c *cli.Context) error {
 	conf, err := getConfig(c)
 	if err != nil {
@@ -185,6 +187,7 @@ func listNodes(c *cli.Context) error {
 		return err
 	}
 
+	// tablewriter: 把数据在终端以表格的形式展示
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetRowLine(true)
 	table.SetAutoWrapText(false)

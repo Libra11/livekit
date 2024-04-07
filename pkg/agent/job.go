@@ -21,6 +21,7 @@ import (
 	"github.com/livekit/protocol/logger"
 )
 
+// Job 代表了一个由 worker 正在执行的任务
 // Represents a job that is being executed by a worker
 type Job struct {
 	id        string
@@ -57,6 +58,7 @@ func (j *Job) Type() livekit.JobType {
 
 func (j *Job) WorkerLoad() float32 {
 	// Current load that this job is taking on its worker
+	// 此任务在其 worker 上占用的当前负载
 	j.mu.Lock()
 	defer j.mu.Unlock()
 	return j.load

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package agent 用于协调和管理 房间、参与者
 package agent
 
 import (
@@ -53,6 +54,7 @@ type JobDescription struct {
 	Participant *livekit.ParticipantInfo
 }
 
+// agentClient 代表了一个 agent 客户端, 用于处理 agent 的任务
 type agentClient struct {
 	client rpc.AgentInternalClient
 
@@ -104,6 +106,7 @@ func NewAgentClient(bus psrpc.MessageBus) (Client, error) {
 	return c, nil
 }
 
+// LaunchJob 在 agent 上启动一个 room 或 participant 任务
 func (c *agentClient) LaunchJob(ctx context.Context, desc *JobDescription) {
 	roomNamespaces, publisherNamespaces, needsRefresh := c.getOrCreateDispatchers()
 
@@ -134,6 +137,7 @@ func (c *agentClient) LaunchJob(ctx context.Context, desc *JobDescription) {
 	})
 }
 
+// getOrCreateDispatchers 获取或创建 dispatchers(调度器)
 func (c *agentClient) getOrCreateDispatchers() (*serverutils.IncrementalDispatcher[string], *serverutils.IncrementalDispatcher[string], bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -146,6 +150,7 @@ func (c *agentClient) getOrCreateDispatchers() (*serverutils.IncrementalDispatch
 	return c.roomNamespaces, c.publisherNamespaces, false
 }
 
+// checkEnabled 这个方法的主要作用是根据代理的启用状态更新 room 命名空间和 publisher 命名空间，以便后续的任务调度和处理能够基于最新的命名空间信息进行。
 func (c *agentClient) checkEnabled(ctx context.Context, roomNamespaces, publisherNamespaces *serverutils.IncrementalDispatcher[string]) {
 	defer roomNamespaces.Done()
 	defer publisherNamespaces.Done()
@@ -155,6 +160,7 @@ func (c *agentClient) checkEnabled(ctx context.Context, roomNamespaces, publishe
 		return
 	}
 
+	// 两个 map 作用，避免重复添加相同的命名空间
 	roomNSMap := make(map[string]bool)
 	publisherNSMap := make(map[string]bool)
 

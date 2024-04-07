@@ -175,9 +175,8 @@ func main() {
 				},
 			},
 			{
-				Name:  "list-nodes",
-				Usage: "list all nodes",
-				// TODO：
+				Name:   "list-nodes",
+				Usage:  "list all nodes",
 				Action: listNodes,
 			},
 			{

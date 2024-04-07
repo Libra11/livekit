@@ -32,6 +32,7 @@ type ScriptMatch struct {
 	Expr string
 }
 
+// Match 这个函数的作用是使用 eval 脚本表达式的结果进行匹配
 // use result of eval script expression for match.
 // expression examples:
 // protocol bigger than 5 : c.protocol > 5
@@ -62,6 +63,7 @@ func (c *clientObject) String() string {
 	return c.info.String()
 }
 
+// IndexGet 该方法根据传入的index参数的值，从clientObject的info字段中获取相应的信息，并将其转换为tengo.Object类型的结果返回。
 func (c *clientObject) IndexGet(index tengo.Object) (res tengo.Object, err error) {
 	field, ok := index.(*tengo.String)
 	if !ok {

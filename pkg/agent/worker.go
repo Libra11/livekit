@@ -181,6 +181,7 @@ func (w *Worker) AssignJob(ctx context.Context, job *livekit.Job) error {
 	w.availability[job.Id] = availCh
 	w.mu.Unlock()
 
+	// 给 worker 发送一个 availability 请求， 请求包含 job 信息， worker 会返回是否可用
 	w.sendRequest(&livekit.ServerMessage{Message: &livekit.ServerMessage_Availability{
 		Availability: &livekit.AvailabilityRequest{Job: job},
 	}})
@@ -191,7 +192,7 @@ func (w *Worker) AssignJob(ctx context.Context, job *livekit.Job) error {
 		if !res.Available {
 			return ErrWorkerNotAvailable
 		}
-
+		// 如果 worker 可用，构建 agent token 并发送给 worker
 		token, err := pagent.BuildAgentToken(w.apiKey, w.apiSecret, job.Room.Name, res.ParticipantIdentity, res.ParticipantName, res.ParticipantMetadata, w.permissions)
 		if err != nil {
 			w.Logger.Errorw("failed to build agent token", err)
@@ -199,6 +200,7 @@ func (w *Worker) AssignJob(ctx context.Context, job *livekit.Job) error {
 		}
 
 		// In OSS, Url is nil, and the used API Key is the same as the one used to connect the worker
+		// 发送一个 assignment 请求，请求包含 job 信息和 token， 分配任务给 worker
 		w.sendRequest(&livekit.ServerMessage{Message: &livekit.ServerMessage_Assignment{
 			Assignment: &livekit.JobAssignment{Job: job, Url: nil, Token: token},
 		}})

@@ -24,6 +24,7 @@ import (
 
 // IncrementalDispatcher is a dispatcher that allows multiple consumers to consume items as they become
 // available, while producers can add items at anytime.
+// IncrementalDispatcher 是一个调度程序，允许多个消费者在项目可用时消耗项目，同时生产者可以随时添加项目。
 type IncrementalDispatcher[T any] struct {
 	done  core.Fuse
 	lock  sync.RWMutex

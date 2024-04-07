@@ -526,6 +526,7 @@ func NewConfig(confString string, strictMode bool, c *cli.Context, baseFlags []c
 
 	if confString != "" {
 		// 从字符串中解析配置
+		// `Name: Libra Age: 12` => {Name: Libra, Age: 12}
 		decoder := yaml.NewDecoder(strings.NewReader(confString))
 		// KnownFields 用于设置解码器是否应该严格检查字段
 		decoder.KnownFields(strictMode)
@@ -585,6 +586,7 @@ func NewConfig(confString string, strictMode bool, c *cli.Context, baseFlags []c
 	return &conf, nil
 }
 
+// IsTURNSEnabled 检查TURN服务器是否已启用
 func (conf *Config) IsTURNSEnabled() bool {
 	if conf.TURN.Enabled && conf.TURN.TLSPort != 0 {
 		return true
@@ -658,10 +660,19 @@ func (conf *Config) ToCLIFlagNames(existingFlags []cli.Flag) map[string]reflect.
 	return flagNames
 }
 
+// ValidateKeys 方法验证配置对象中的密钥相关设置是否正确。
 func (conf *Config) ValidateKeys() error {
+	// 如果设置了 KeyFile，首选使用密钥文件
 	// prefer keyfile if set
 	if conf.KeyFile != "" {
+		// 检查密钥文件的权限
 		var otherFilter os.FileMode = 0o007
+		// os.Stat 返回文件的信息
+		// 使用 st.Mode().Perm() 获取文件的权限，并将其与 otherFilter 进行按位与操作。
+		// 如果结果不等于 0o000，则表示文件的其他用户权限中有写入权限，这是不安全的。
+		// 在这种情况下，函数返回 ErrKeyFileIncorrectPermission 错误。
+		// r w x: 4 2 1 代表 读 写 执行， 7 = 4 + 2 + 1
+		// 0oabc: a 代表所有者权限，b 代表组权限，c 代表其他用户权限
 		if st, err := os.Stat(conf.KeyFile); err != nil {
 			return err
 		} else if st.Mode().Perm()&otherFilter != 0o000 {
@@ -674,6 +685,7 @@ func (conf *Config) ValidateKeys() error {
 		defer func() {
 			_ = f.Close()
 		}()
+		// 解码密钥文件内容并存储到 conf.Keys 中
 		decoder := yaml.NewDecoder(f)
 		conf.Keys = map[string]string{}
 		if err = decoder.Decode(conf.Keys); err != nil {
@@ -685,6 +697,7 @@ func (conf *Config) ValidateKeys() error {
 		return ErrKeysNotSet
 	}
 
+	// 如果不是开发模式，检查密钥是否足够长
 	if !conf.Development {
 		for key, secret := range conf.Keys {
 			if len(secret) < 32 {

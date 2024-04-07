@@ -18,6 +18,7 @@ import (
 	"github.com/livekit/protocol/livekit"
 )
 
+// ClientConfigurationManager 一个接口，用于根据客户端信息获取客户端配置
 type ClientConfigurationManager interface {
 	GetConfiguration(clientInfo *livekit.ClientInfo) *livekit.ClientConfiguration
 }

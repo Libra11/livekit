@@ -36,6 +36,7 @@ func NewStaticClientConfigurationManager(confs []ConfigurationItem) *StaticClien
 	return &StaticClientConfigurationManager{confs: confs}
 }
 
+// GetConfiguration 根据客户端信息获取客户端配置 如果有多个匹配的配置，可以选择合并这些配置。 */
 func (s *StaticClientConfigurationManager) GetConfiguration(clientInfo *livekit.ClientInfo) *livekit.ClientConfiguration {
 	var matchedConf []*livekit.ClientConfiguration
 	for _, c := range s.confs {
