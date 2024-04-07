@@ -69,6 +69,7 @@ type ExtPacket struct {
 // Buffer contains all packets
 type Buffer struct {
 	sync.RWMutex
+	readCond      *sync.Cond
 	bucket        *bucket.Bucket
 	nacker        *nack.NackQueue
 	maxVideoPkts  int
@@ -92,9 +93,10 @@ type Buffer struct {
 	latestTSForAudioLevelInitialized bool
 	latestTSForAudioLevel            uint32
 
-	twcc             *twcc.Responder
-	audioLevelParams audio.AudioLevelParams
-	audioLevel       *audio.AudioLevel
+	twcc                    *twcc.Responder
+	audioLevelParams        audio.AudioLevelParams
+	audioLevel              *audio.AudioLevel
+	enableAudioLossProxying bool
 
 	lastPacketRead int
 
@@ -144,6 +146,7 @@ func NewBuffer(ssrc uint32, maxVideoPkts, maxAudioPkts int) *Buffer {
 		pliThrottle:  int64(500 * time.Millisecond),
 		logger:       l.WithComponent(sutils.ComponentPub).WithComponent(sutils.ComponentSFU),
 	}
+	b.readCond = sync.NewCond(&b.RWMutex)
 	b.extPackets.SetMinCapacity(7)
 	return b
 }
@@ -178,6 +181,13 @@ func (b *Buffer) SetAudioLevelParams(audioLevelParams audio.AudioLevelParams) {
 	defer b.Unlock()
 
 	b.audioLevelParams = audioLevelParams
+}
+
+func (b *Buffer) SetAudioLossProxying(enable bool) {
+	b.Lock()
+	defer b.Unlock()
+
+	b.enableAudioLossProxying = enable
 }
 
 func (b *Buffer) Bind(params webrtc.RTPParameters, codec webrtc.RTPCodecCapability) {
@@ -324,6 +334,7 @@ func (b *Buffer) Write(pkt []byte) (n int, err error) {
 	b.payloadType = rtpPacket.PayloadType
 	b.calc(pkt, &rtpPacket, time.Now(), false)
 	b.Unlock()
+	b.readCond.Signal()
 	return
 }
 
@@ -398,24 +409,23 @@ func (b *Buffer) Read(buff []byte) (n int, err error) {
 }
 
 func (b *Buffer) ReadExtended(buf []byte) (*ExtPacket, error) {
+	b.Lock()
 	for {
 		if b.closed.Load() {
+			b.Unlock()
 			return nil, io.EOF
 		}
-		b.Lock()
 		if b.extPackets.Len() > 0 {
 			ep := b.extPackets.PopFront()
 			ep = b.patchExtPacket(ep, buf)
 			if ep == nil {
-				b.Unlock()
 				continue
 			}
 
 			b.Unlock()
 			return ep, nil
 		}
-		b.Unlock()
-		time.Sleep(10 * time.Millisecond)
+		b.readCond.Wait()
 	}
 }
 
@@ -437,6 +447,7 @@ func (b *Buffer) Close() error {
 			}
 		}
 
+		b.readCond.Broadcast()
 		if b.onClose != nil {
 			b.onClose()
 		}
@@ -790,14 +801,16 @@ func (b *Buffer) mayGrowBucket() {
 		return
 	}
 	oldCap := cap
-	deltaInfo := b.rtpStats.DeltaInfo(b.ppsSnapshotId)
-	if deltaInfo != nil && deltaInfo.Duration > 500*time.Millisecond {
-		pps := int(time.Duration(deltaInfo.Packets) * time.Second / deltaInfo.Duration)
-		for pps > cap && cap < maxPkts {
-			cap = b.bucket.Grow()
-		}
-		if cap > oldCap {
-			b.logger.Debugw("grow bucket", "from", oldCap, "to", cap, "pps", pps)
+	if deltaInfo := b.rtpStats.DeltaInfo(b.ppsSnapshotId); deltaInfo != nil {
+		duration := deltaInfo.EndTime.Sub(deltaInfo.StartTime)
+		if duration > 500*time.Millisecond {
+			pps := int(time.Duration(deltaInfo.Packets) * time.Second / duration)
+			for pps > cap && cap < maxPkts {
+				cap = b.bucket.Grow()
+			}
+			if cap > oldCap {
+				b.logger.Debugw("grow bucket", "from", oldCap, "to", cap, "pps", pps)
+			}
 		}
 	}
 }
@@ -819,7 +832,12 @@ func (b *Buffer) buildReceptionReport() *rtcp.ReceptionReport {
 		return nil
 	}
 
-	return b.rtpStats.GetRtcpReceptionReport(b.mediaSSRC, b.lastFractionLostToReport, b.rrSnapshotId)
+	proxyLoss := b.lastFractionLostToReport
+	if b.codecType == webrtc.RTPCodecTypeAudio && !b.enableAudioLossProxying {
+		proxyLoss = 0
+	}
+
+	return b.rtpStats.GetRtcpReceptionReport(b.mediaSSRC, proxyLoss, b.rrSnapshotId)
 }
 
 func (b *Buffer) SetSenderReportData(rtpTime uint32, ntpTime uint64) {

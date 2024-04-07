@@ -18,9 +18,9 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/jxskiss/base62 v1.1.0
 	github.com/livekit/mageutil v0.0.0-20230125210925-54e8a70427c1
-	github.com/livekit/mediatransportutil v0.0.0-20240302142739-1c3dd691a1b8
-	github.com/livekit/protocol v1.12.1-0.20240321094538-0d9caadf760e
-	github.com/livekit/psrpc v0.5.3-0.20240312110212-61ab09477c30
+	github.com/livekit/mediatransportutil v0.0.0-20240406063423-a67d961689df
+	github.com/livekit/protocol v1.12.1-0.20240403204952-bc6c7ffd71f0
+	github.com/livekit/psrpc v0.5.3-0.20240327035954-cec3a0e614be
 	github.com/mackerelio/go-osstat v0.2.4
 	github.com/magefile/mage v1.15.0
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1
@@ -30,12 +30,12 @@ require (
 	github.com/pion/ice/v2 v2.3.14
 	github.com/pion/interceptor v0.1.25
 	github.com/pion/rtcp v1.2.14
-	github.com/pion/rtp v1.8.3
-	github.com/pion/sctp v1.8.12
-	github.com/pion/sdp/v3 v3.0.8
+	github.com/pion/rtp v1.8.5
+	github.com/pion/sctp v1.8.14
+	github.com/pion/sdp/v3 v3.0.9
 	github.com/pion/transport/v2 v2.2.4
 	github.com/pion/turn/v2 v2.1.5
-	github.com/pion/webrtc/v3 v3.2.29
+	github.com/pion/webrtc/v3 v3.2.34
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.19.0
 	github.com/redis/go-redis/v9 v9.5.1
@@ -79,7 +79,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/mdlayher/netlink v1.7.1 // indirect
 	github.com/mdlayher/socket v0.4.0 // indirect
-	github.com/nats-io/nats.go v1.33.1 // indirect
+	github.com/nats-io/nats.go v1.34.0 // indirect
 	github.com/nats-io/nkeys v0.4.7 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/pion/datachannel v1.5.5 // indirect
@@ -97,13 +97,14 @@ require (
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
+	go.uber.org/zap/exp v0.2.0 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/mod v0.16.0 // indirect
 	golang.org/x/net v0.22.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.19.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240311173647-c811ad7063a7 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240401170217-c3f982113cda // indirect
 	google.golang.org/grpc v1.62.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
