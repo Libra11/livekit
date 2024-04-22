@@ -13,6 +13,8 @@
 // limitations under the License.
 
 // Package agent 用于协调和管理 房间、参与者
+// 任务（job）由客户端（client）分配给工作节点（worker），而代理（agent）则是一种特殊类型的工作节点，
+// 可能会处理特定类型的任务。客户端负责与工作节点和代理进行通信，并管理任务的分配和执行过程。
 package agent
 
 import (
@@ -32,17 +34,24 @@ import (
 )
 
 const (
-	EnabledCacheTTL         = 1 * time.Minute
-	RoomAgentTopic          = "room"
-	PublisherAgentTopic     = "publisher"
+	// EnabledCacheTTL 用于缓存代理的启用(是否可用)状态。一旦缓存的时间超过了这个过期时间，
+	// 代理客户端将会重新检查代理的启用状态，以确保缓存的状态信息是最新的
+	EnabledCacheTTL = 1 * time.Minute
+	// RoomAgentTopic 和 PublisherAgentTopic：用于区分房间任务和发布者任务的主题。
+	RoomAgentTopic      = "room"
+	PublisherAgentTopic = "publisher"
+	// DefaultHandlerNamespace 默认的命名空间
 	DefaultHandlerNamespace = ""
 
+	// CheckEnabledTimeout 用于检查代理是否可用的超时时间
 	CheckEnabledTimeout = 5 * time.Second
 )
 
 type Client interface {
 	// LaunchJob starts a room or participant job on an agent.
 	// it will launch a job once for each worker in each namespace
+	// LaunchJob 在 agent 上启动一个 room 或 participant 任务
+	// 它将在每个命名空间的每个 worker 上启动一个任务
 	LaunchJob(ctx context.Context, desc *JobDescription)
 	Stop() error
 }
@@ -51,6 +60,7 @@ type JobDescription struct {
 	JobType livekit.JobType
 	Room    *livekit.Room
 	// only set for participant jobs
+	// 根据是否有参与者信息，来判断是房间任务还是参与者任务
 	Participant *livekit.ParticipantInfo
 }
 
@@ -84,6 +94,8 @@ func NewAgentClient(bus psrpc.MessageBus) (Client, error) {
 		subDone: make(chan struct{}),
 	}
 
+	// 订阅工作节点注册的消息。订阅操作是针对消息总线（message bus）中的特定主题（topic）进行的，以便在该主题上接收到新消息时能够获取通知。
+	// TODO: 还不太懂
 	sub, err := c.client.SubscribeWorkerRegistered(context.Background(), DefaultHandlerNamespace)
 	if err != nil {
 		return nil, err

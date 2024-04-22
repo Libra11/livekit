@@ -175,20 +175,24 @@ func (w *Worker) RunningJobs() map[string]*Job {
 }
 
 func (w *Worker) AssignJob(ctx context.Context, job *livekit.Job) error {
+	// 创建一个通道用于接收工作节点的可用性响应
 	availCh := make(chan *livekit.AvailabilityResponse, 1)
 
+	// 加锁并将当前任务的可用性通道添加到工作节点的可用性映射中
 	w.mu.Lock()
 	w.availability[job.Id] = availCh
 	w.mu.Unlock()
 
-	// 给 worker 发送一个 availability 请求， 请求包含 job 信息， worker 会返回是否可用
+	// 向工作节点发送一个可用性请求，请求中包含任务信息
 	w.sendRequest(&livekit.ServerMessage{Message: &livekit.ServerMessage_Availability{
 		Availability: &livekit.AvailabilityRequest{Job: job},
 	}})
 
 	// See handleAvailability for the response
+	// 等待工作节点的可用性响应
 	select {
 	case res := <-availCh:
+		// 如果工作节点不可用，则返回 ErrWorkerNotAvailable 错误
 		if !res.Available {
 			return ErrWorkerNotAvailable
 		}
@@ -200,7 +204,7 @@ func (w *Worker) AssignJob(ctx context.Context, job *livekit.Job) error {
 		}
 
 		// In OSS, Url is nil, and the used API Key is the same as the one used to connect the worker
-		// 发送一个 assignment 请求，请求包含 job 信息和 token， 分配任务给 worker
+		// 向工作节点发送任务分配请求，请求中包含任务信息和生成的 token
 		w.sendRequest(&livekit.ServerMessage{Message: &livekit.ServerMessage_Assignment{
 			Assignment: &livekit.JobAssignment{Job: job, Url: nil, Token: token},
 		}})
@@ -257,6 +261,7 @@ func (w *Worker) Close() {
 	w.mu.Unlock()
 }
 
+// HandleMessage 根据接收到的不同类型的消息调用相应的处理方法，以便工作节点能够正确地处理服务器发送的各种命令和指令。
 func (w *Worker) HandleMessage(req *livekit.WorkerMessage) {
 	switch m := req.Message.(type) {
 	case *livekit.WorkerMessage_Register:
@@ -276,6 +281,10 @@ func (w *Worker) HandleMessage(req *livekit.WorkerMessage) {
 	}
 }
 
+// 1. 当工作节点连接到服务器时，服务器可能会发送一个注册请求，要求工作节点注册自己。这是一个典型的请求-响应模式，在分布式系统中非常常见。
+// 2. 工作节点接收到注册请求后，调用 handleRegister 方法来处理该请求。在处理过程中，工作节点设置自己的属性，并将自己标记为已注册状态。
+// 3. 在处理完注册请求后，工作节点需要向服务器发送一个注册响应，以通知服务器注册成功并提供相关信息。
+// 这样服务器就知道了工作节点的标识和相关配置信息，并可以在需要时与工作节点进行通信。
 func (w *Worker) handleRegister(req *livekit.RegisterWorkerRequest) {
 	if w.registered.Load() {
 		w.Logger.Warnw("worker already registered", nil, "id", w.id)
@@ -325,12 +334,15 @@ func (w *Worker) handleAvailability(res *livekit.AvailabilityResponse) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
+	// 从工作节点的可用性映射中获取任务的可用性通道
 	availCh, ok := w.availability[res.JobId]
 	if !ok {
+		// 如果找不到与响应对应的任务通道，说明收到的响应是针对一个未知的任务，此时会记录一条警告日志，并提前返回。
 		w.Logger.Warnw("received availability response for unknown job", nil, "jobId", res.JobId)
 		return
 	}
 
+	// 将工作节点的可用性响应发送到任务通道中, 对应上面 AssignJob 方法中的 select 语句
 	availCh <- res
 	delete(w.availability, res.JobId)
 }
@@ -348,6 +360,7 @@ func (w *Worker) handleJobUpdate(update *livekit.UpdateJobStatus) {
 	job.UpdateStatus(update)
 }
 
+// 用于测试和调试，它允许模拟一个任务并将其分配给工作节点，以便验证任务分配和处理的正确性。
 func (w *Worker) handleSimulateJob(simulate *livekit.SimulateJobRequest) {
 	jobType := livekit.JobType_JT_ROOM
 	if simulate.Participant != nil {
@@ -370,6 +383,7 @@ func (w *Worker) handleSimulateJob(simulate *livekit.SimulateJobRequest) {
 
 }
 
+// handleWorkerPing 方法用于处理工作节点发送的心跳请求，以便服务器能够监控工作节点的状态并及时发现异常。
 func (w *Worker) handleWorkerPing(ping *livekit.WorkerPing) {
 	w.sendRequest(&livekit.ServerMessage{Message: &livekit.ServerMessage_Pong{
 		Pong: &livekit.WorkerPong{
