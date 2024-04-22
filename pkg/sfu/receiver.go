@@ -35,7 +35,7 @@ import (
 	"github.com/livekit/livekit-server/pkg/sfu/audio"
 	"github.com/livekit/livekit-server/pkg/sfu/buffer"
 	"github.com/livekit/livekit-server/pkg/sfu/connectionquality"
-	dd "github.com/livekit/livekit-server/pkg/sfu/dependencydescriptor"
+	dd "github.com/livekit/livekit-server/pkg/sfu/rtpextension/dependencydescriptor"
 )
 
 var (
@@ -645,6 +645,25 @@ func (w *WebRTCReceiver) GetDeltaStats() map[uint32]*buffer.StreamStatsWithLayer
 	}
 
 	return deltaStats
+}
+
+func (w *WebRTCReceiver) GetLastSenderReportTime() time.Time {
+	w.bufferMu.RLock()
+	defer w.bufferMu.RUnlock()
+
+	latestSRTime := time.Time{}
+	for _, buff := range w.buffers {
+		if buff == nil {
+			continue
+		}
+
+		srAt := buff.GetLastSenderReportTime()
+		if srAt.After(latestSRTime) {
+			latestSRTime = srAt
+		}
+	}
+
+	return latestSRTime
 }
 
 func (w *WebRTCReceiver) forwardRTP(layer int32) {

@@ -18,24 +18,24 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/jxskiss/base62 v1.1.0
 	github.com/livekit/mageutil v0.0.0-20230125210925-54e8a70427c1
-	github.com/livekit/mediatransportutil v0.0.0-20240406063423-a67d961689df
-	github.com/livekit/protocol v1.12.1-0.20240403204952-bc6c7ffd71f0
-	github.com/livekit/psrpc v0.5.3-0.20240327035954-cec3a0e614be
+	github.com/livekit/mediatransportutil v0.0.0-20240416023643-881d3dc5423e
+	github.com/livekit/protocol v1.12.1-0.20240420195247-e418881086ea
+	github.com/livekit/psrpc v0.5.3-0.20240403150641-811331b106d9
 	github.com/mackerelio/go-osstat v0.2.4
 	github.com/magefile/mage v1.15.0
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/pion/dtls/v2 v2.2.10
-	github.com/pion/ice/v2 v2.3.14
+	github.com/pion/ice/v2 v2.3.18
 	github.com/pion/interceptor v0.1.25
 	github.com/pion/rtcp v1.2.14
 	github.com/pion/rtp v1.8.5
-	github.com/pion/sctp v1.8.14
+	github.com/pion/sctp v1.8.16
 	github.com/pion/sdp/v3 v3.0.9
 	github.com/pion/transport/v2 v2.2.4
-	github.com/pion/turn/v2 v2.1.5
-	github.com/pion/webrtc/v3 v3.2.34
+	github.com/pion/turn/v2 v2.1.6
+	github.com/pion/webrtc/v3 v3.2.38
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.19.0
 	github.com/redis/go-redis/v9 v9.5.1
@@ -55,6 +55,7 @@ require (
 )
 
 require (
+	github.com/benbjohnson/clock v1.3.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
